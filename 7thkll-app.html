@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="7THKLL">
+<meta name="theme-color" content="#060606">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<title>7THKLL — AI Command</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --black: #060606;
+  --void: #0c0c0c;
+  --ash: #141414;
+  --ash2: #1c1c1c;
+  --bone: #d4cfc4;
+  --bone-dim: #6a6660;
+  --bone-faint: #252320;
+  --white: #f0ece4;
+  --accent: #c8a96e;
+  --accent-dim: #7a6540;
+  --green: #2d7a4a;
+  --mono: 'Share Tech Mono', monospace;
+  --serif: 'Cinzel', serif;
+  --display: 'Cinzel Decorative', serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; }
+body {
+  background:var(--black); color:var(--bone);
+  font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+
+/* GRAIN */
+body::after {
+  content:''; position:fixed; inset:-50%; width:200%; height:200%;
+  pointer-events:none; z-index:9000; opacity:0.022;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 0.5s steps(1) infinite;
+}
+@keyframes grain {
+  0%{transform:translate(0,0)} 25%{transform:translate(-3%,-3%)}
+  50%{transform:translate(3%,0)} 75%{transform:translate(0,3%)}
+}
+
+/* ── LAYOUT ───────────────────────────────────────── */
+.app {
+  display:flex; flex-direction:column;
+  height:100vh;
+  height:100dvh;
+}
+
+/* TOPBAR */
+.topbar {
+  background:var(--void);
+  border-bottom:1px solid var(--bone-faint);
+  padding: calc(14px + var(--safe-top)) 20px 14px;
+  display:flex; align-items:center; gap:12px;
+  flex-shrink:0; position:relative; z-index:100;
+}
+.topbar-logo {
+  font-family:var(--display); font-size:0.85rem;
+  font-weight:900; letter-spacing:0.3em; color:var(--bone);
+}
+.topbar-sub {
+  font-family:var(--mono); font-size:0.45rem;
+  color:var(--bone-dim); letter-spacing:0.2em;
+  display:none;
+}
+.topbar-dot {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 5px var(--green);
+  animation:pdot 2s ease-in-out infinite; margin-left:auto;
+}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:0.3}}
+.topbar-api {
+  font-family:var(--mono); font-size:0.45rem;
+  letter-spacing:0.15em; color:var(--bone-dim);
+  padding:6px 12px; border:1px solid var(--bone-faint);
+  background:none; cursor:pointer; transition:all 0.2s;
+  -webkit-appearance:none;
+}
+.topbar-api:active { border-color:var(--bone-dim); color:var(--bone); }
+
+/* CONTENT AREA */
+.content {
+  flex:1; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* PANELS */
+.panel { display:none; flex-direction:column; height:100%; overflow:hidden; }
+.panel.active { display:flex; }
+
+/* HOME PANEL */
+#panel-home {
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.home-header {
+  padding:32px 24px 24px;
+  border-bottom:1px solid var(--bone-faint);
+}
+.home-title {
+  font-family:var(--display); font-size:1.3rem;
+  color:var(--bone); letter-spacing:0.15em; margin-bottom:6px;
+}
+.home-sub {
+  font-family:var(--mono); font-size:0.5rem;
+  color:var(--bone-dim); letter-spacing:0.25em;
+}
+.agent-cards { padding:16px; display:flex; flex-direction:column; gap:2px; }
+.agent-card {
+  background:var(--ash); border:1px solid var(--bone-faint);
+  padding:20px; display:flex; align-items:center; gap:16px;
+  cursor:pointer; transition:all 0.2s; position:relative;
+  overflow:hidden; -webkit-appearance:none; width:100%;
+  text-align:left;
+}
+.agent-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width:2px; background:var(--accent); opacity:0;
+  transition:opacity 0.2s;
+}
+.agent-card:active { background:var(--ash2); }
+.agent-card:active::before { opacity:1; }
+.card-icon {
+  width:44px; height:44px; border:1px solid var(--bone-faint);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:0.65rem; color:var(--bone-dim);
+  flex-shrink:0; transition:all 0.2s;
+}
+.agent-card:active .card-icon { border-color:var(--accent-dim); color:var(--accent); }
+.card-info { flex:1; min-width:0; }
+.card-name {
+  font-family:var(--serif); font-size:0.7rem;
+  letter-spacing:0.2em; color:var(--bone);
+  text-transform:uppercase; display:block; margin-bottom:4px;
+}
+.card-desc {
+  font-family:var(--mono); font-size:0.48rem;
+  color:var(--bone-dim); letter-spacing:0.1em;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.card-arrow {
+  font-family:var(--mono); font-size:0.7rem;
+  color:var(--bone-faint); flex-shrink:0;
+}
+.card-badge {
+  position:absolute; top:12px; right:40px;
+  font-family:var(--mono); font-size:0.4rem;
+  letter-spacing:0.2em; color:var(--green);
+  padding:2px 8px; border:1px solid var(--green);
+}
+
+/* CHAT PANEL */
+.panel-header {
+  padding:18px 20px 16px;
+  border-bottom:1px solid var(--bone-faint);
+  display:flex; align-items:center; gap:12px;
+  flex-shrink:0;
+}
+.back-btn {
+  background:none; border:none;
+  font-family:var(--mono); font-size:0.7rem;
+  color:var(--bone-dim); cursor:pointer;
+  padding:4px 8px 4px 0; transition:color 0.2s;
+  -webkit-appearance:none;
+}
+.back-btn:active { color:var(--bone); }
+.ph-info { flex:1; min-width:0; }
+.ph-name {
+  font-family:var(--display); font-size:0.85rem;
+  letter-spacing:0.2em; color:var(--bone); display:block;
+}
+.ph-sub {
+  font-family:var(--mono); font-size:0.42rem;
+  letter-spacing:0.2em; color:var(--bone-dim);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ph-dot {
+  width:5px; height:5px; border-radius:50%;
+  background:var(--green); box-shadow:0 0 4px var(--green);
+  flex-shrink:0;
+}
+
+/* CHAT BODY */
+.chat-body {
+  flex:1; overflow-y:auto; overflow-x:hidden;
+  padding:16px; display:flex; flex-direction:column; gap:12px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.chat-body::-webkit-scrollbar { display:none; }
+
+.msg { display:flex; gap:8px; animation:msgIn 0.25s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.msg.user { flex-direction:row-reverse; }
+
+.msg-av {
+  width:26px; height:26px; flex-shrink:0;
+  border:1px solid var(--bone-faint);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:0.42rem; color:var(--bone-dim);
+}
+.msg.user .msg-av { border-color:var(--accent-dim); color:var(--accent); }
+
+.msg-bub {
+  max-width:80%; padding:12px 14px;
+  background:var(--ash); border:1px solid var(--bone-faint);
+  font-family:var(--mono); font-size:0.58rem;
+  color:var(--bone); line-height:1.85; letter-spacing:0.04em;
+}
+.msg.user .msg-bub {
+  background:var(--ash2); border-color:var(--accent-dim);
+}
+.msg-bub strong { color:var(--accent); font-weight:normal; }
+.msg-bub .tag {
+  display:inline-block; padding:1px 6px;
+  background:var(--bone-faint); font-size:0.48rem;
+  letter-spacing:0.1em; color:var(--bone-dim); margin:1px 2px;
+}
+
+/* TYPING */
+.typing-msg { display:none; }
+.typing-msg.show { display:flex; }
+.typing-dots {
+  padding:12px 14px; background:var(--ash);
+  border:1px solid var(--bone-faint);
+  display:flex; gap:4px; align-items:center;
+}
+.typing-dots span {
+  width:4px; height:4px; border-radius:50%;
+  background:var(--bone-dim); animation:td 1.2s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2){animation-delay:0.2s}
+.typing-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-4px);opacity:1}}
+
+/* INPUT */
+.chat-input-area {
+  padding:12px 16px;
+  padding-bottom:calc(12px + var(--safe-bottom));
+  border-top:1px solid var(--bone-faint);
+  background:var(--void); flex-shrink:0;
+}
+.hints-row {
+  display:flex; gap:6px; margin-bottom:10px;
+  overflow-x:auto; scrollbar-width:none; padding-bottom:2px;
+}
+.hints-row::-webkit-scrollbar { display:none; }
+.hint {
+  padding:5px 12px; background:transparent;
+  border:1px solid var(--bone-faint);
+  font-family:var(--mono); font-size:0.42rem;
+  color:var(--bone-dim); white-space:nowrap;
+  cursor:pointer; letter-spacing:0.12em;
+  transition:all 0.15s; -webkit-appearance:none;
+  flex-shrink:0;
+}
+.hint:active { border-color:var(--bone-dim); color:var(--bone); }
+
+.input-row {
+  display:flex; border:1px solid var(--bone-faint);
+  transition:border-color 0.2s;
+}
+.input-row:focus-within { border-color:var(--bone-dim); }
+.chat-input {
+  flex:1; background:transparent; border:none;
+  padding:14px 16px; font-family:var(--mono); font-size:0.6rem;
+  color:var(--bone); letter-spacing:0.08em; outline:none;
+  resize:none; min-height:50px; max-height:100px;
+  -webkit-appearance:none; line-height:1.6;
+}
+.chat-input::placeholder { color:var(--bone-faint); }
+.send-btn {
+  background:var(--bone); border:none;
+  padding:0 20px; cursor:pointer;
+  font-family:var(--mono); font-size:0.55rem;
+  letter-spacing:0.2em; color:var(--black);
+  text-transform:uppercase; flex-shrink:0;
+  -webkit-appearance:none; min-width:70px;
+  transition:background 0.15s;
+}
+.send-btn:active { background:var(--white); }
+.send-btn:disabled { background:var(--ash2); color:var(--bone-dim); }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  background:var(--void); border-top:1px solid var(--bone-faint);
+  display:flex; flex-shrink:0;
+  padding-bottom:var(--safe-bottom);
+}
+.nav-item {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:10px 0; cursor:pointer; gap:4px;
+  background:none; border:none; transition:all 0.15s;
+  -webkit-appearance:none;
+}
+.nav-item.active .nav-icon { color:var(--accent); }
+.nav-item.active .nav-label { color:var(--accent); }
+.nav-icon {
+  font-family:var(--mono); font-size:0.75rem;
+  color:var(--bone-dim); line-height:1;
+}
+.nav-label {
+  font-family:var(--mono); font-size:0.38rem;
+  letter-spacing:0.25em; color:var(--bone-dim);
+  text-transform:uppercase;
+}
+
+/* API MODAL */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(6,6,6,0.96);
+  z-index:8000; display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.modal-overlay.hidden { display:none; }
+.modal {
+  background:var(--void); border:1px solid var(--bone-faint);
+  padding:36px 28px; width:100%; max-width:420px;
+  animation:modalIn 0.3s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-title {
+  font-family:var(--display); font-size:1rem;
+  color:var(--bone); letter-spacing:0.15em; margin-bottom:8px;
+}
+.modal-sub {
+  font-family:var(--mono); font-size:0.48rem;
+  color:var(--bone-dim); letter-spacing:0.15em;
+  line-height:2; margin-bottom:28px;
+}
+.modal-input {
+  width:100%; background:var(--ash); border:1px solid var(--bone-faint);
+  padding:14px 16px; font-family:var(--mono); font-size:0.58rem;
+  color:var(--bone); letter-spacing:0.1em; outline:none;
+  margin-bottom:12px; -webkit-appearance:none;
+  transition:border-color 0.2s;
+}
+.modal-input:focus { border-color:var(--bone-dim); }
+.modal-btn {
+  width:100%; padding:14px; background:var(--bone); border:none;
+  font-family:var(--mono); font-size:0.58rem; letter-spacing:0.3em;
+  color:var(--black); cursor:pointer; text-transform:uppercase;
+  -webkit-appearance:none; transition:background 0.15s;
+}
+.modal-btn:active { background:var(--white); }
+.modal-note {
+  margin-top:14px; font-family:var(--mono); font-size:0.43rem;
+  color:var(--bone-dim); letter-spacing:0.1em; line-height:2;
+}
+.modal-note a { color:var(--accent); text-decoration:none; }
+
+/* SYNC indicator */
+.sync-badge {
+  font-family:var(--mono); font-size:0.4rem;
+  letter-spacing:0.2em; color:var(--green);
+  padding:2px 8px; border:1px solid var(--green);
+  margin-left:auto; flex-shrink:0;
+}
+
+/* DESKTOP LAYOUT */
+@media (min-width: 768px) {
+  .app { flex-direction:column; }
+  .topbar-sub { display:block; }
+  .bottom-nav { display:none; }
+  .content { flex-direction:row; }
+  #panel-home {
+    width:280px; flex-shrink:0;
+    border-right:1px solid var(--bone-faint);
+    overflow-y:auto; display:block !important;
+  }
+  #panel-home .home-header { padding:24px 20px 20px; }
+  .agent-cards { padding:12px; }
+  .panel:not(#panel-home) {
+    flex:1;
+  }
+  .panel:not(#panel-home).active { display:flex; }
+  .back-btn { display:none; }
+  /* Show welcome on desktop when no agent selected */
+  #panel-welcome { display:flex; }
+}
+</style>
+</head>
+<body>
+
+<!-- API MODAL -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal">
+    <div class="modal-title">Initialize</div>
+    <div class="modal-sub">Enter your Gemini API key to activate<br>all 7THKLL AI agents. Stored locally only.</div>
+    <input class="modal-input" type="password" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
+    <button class="modal-btn" onclick="initSystem()">Activate System</button>
+    <div class="modal-note">
+      Free key → <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a><br>
+      Your conversations sync across all your devices.
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">7THKLL</div>
+    <div class="topbar-sub">AI COMMAND CENTER</div>
+    <div class="topbar-dot"></div>
+    <span class="sync-badge" id="syncBadge" style="display:none">● SYNCED</span>
+    <button class="topbar-api" id="apiBtn" onclick="document.getElementById('apiModal').classList.remove('hidden')">API ●</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- HOME / SIDEBAR -->
+    <div class="panel active" id="panel-home">
+      <div class="home-header">
+        <div class="home-title">Command</div>
+        <div class="home-sub">SELECT AN AGENT TO BEGIN</div>
+      </div>
+      <div class="agent-cards">
+        <button class="agent-card" onclick="openAgent('kllcreate')">
+          <div class="card-icon">KC</div>
+          <div class="card-info">
+            <span class="card-name">KllCreate</span>
+            <span class="card-desc">Posts · Captions · Visual prompts · Scripts</span>
+          </div>
+          <div class="card-arrow">›</div>
+        </button>
+        <button class="agent-card" onclick="openAgent('kllwatch')">
+          <div class="card-icon">KW</div>
+          <div class="card-info">
+            <span class="card-name">KllWatch</span>
+            <span class="card-desc">Trends · Competitors · Viral intel</span>
+          </div>
+          <div class="card-arrow">›</div>
+        </button>
+        <button class="agent-card" onclick="openAgent('kllmail')">
+          <div class="card-icon">KE</div>
+          <div class="card-info">
+            <span class="card-name">KllMail</span>
+            <span class="card-desc">Emails · Drop alerts · Recovery flows</span>
+          </div>
+          <div class="card-arrow">›</div>
+        </button>
+        <button class="agent-card" onclick="openAgent('kllchat')">
+          <div class="card-icon">KX</div>
+          <div class="card-info">
+            <span class="card-name">KllChat</span>
+            <span class="card-desc">Customer DMs · FAQ · Service responses</span>
+          </div>
+          <div class="card-arrow">›</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- AGENT PANELS -->
+    <div class="panel" id="panel-kllcreate" data-agent="kllcreate">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">‹</button>
+        <div class="ph-info">
+          <span class="ph-name">KllCreate</span>
+          <span class="ph-sub">CONTENT · CAPTIONS · PROMPTS · SCRIPTS</span>
+        </div>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="chat-body" id="chat-kllcreate"></div>
+      <div class="chat-input-area">
+        <div class="hints-row">
+          <button class="hint" onclick="fillInput('kllcreate','Generate a full post package for today')">Today's post</button>
+          <button class="hint" onclick="fillInput('kllcreate','Write a drop teaser caption')">Drop teaser</button>
+          <button class="hint" onclick="fillInput('kllcreate','Create a cinematic video prompt for Kling AI')">Video prompt</button>
+          <button class="hint" onclick="fillInput('kllcreate','Write 5 Instagram captions in the 7THKLL voice')">5 captions</button>
+          <button class="hint" onclick="fillInput('kllcreate','Generate a TikTok script for behind the scenes content')">TikTok script</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="input-kllcreate" placeholder="Tell KllCreate what to make..." rows="1"></textarea>
+          <button class="send-btn" id="send-kllcreate" onclick="sendMessage('kllcreate')">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-kllwatch" data-agent="kllwatch">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">‹</button>
+        <div class="ph-info">
+          <span class="ph-name">KllWatch</span>
+          <span class="ph-sub">TRENDS · INTEL · COMPETITORS · CULTURE</span>
+        </div>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="chat-body" id="chat-kllwatch"></div>
+      <div class="chat-input-area">
+        <div class="hints-row">
+          <button class="hint" onclick="fillInput('kllwatch','What streetwear trends should 7THKLL know right now?')">Current trends</button>
+          <button class="hint" onclick="fillInput('kllwatch','Analyze killtec and 8thwndr content strategy')">Competitors</button>
+          <button class="hint" onclick="fillInput('kllwatch','What content is going viral in streetwear on TikTok?')">Viral content</button>
+          <button class="hint" onclick="fillInput('kllwatch','What should 7THKLLs first drop strategy look like?')">Drop strategy</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="input-kllwatch" placeholder="Ask KllWatch about trends..." rows="1"></textarea>
+          <button class="send-btn" id="send-kllwatch" onclick="sendMessage('kllwatch')">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-kllmail" data-agent="kllmail">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">‹</button>
+        <div class="ph-info">
+          <span class="ph-name">KllMail</span>
+          <span class="ph-sub">EMAILS · DROP ALERTS · FLOWS · RECOVERY</span>
+        </div>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="chat-body" id="chat-kllmail"></div>
+      <div class="chat-input-area">
+        <div class="hints-row">
+          <button class="hint" onclick="fillInput('kllmail','Write a waitlist confirmation email for 7THKLL')">Waitlist confirm</button>
+          <button class="hint" onclick="fillInput('kllmail','Write a drop day announcement — drop goes live in 1 hour')">Drop alert</button>
+          <button class="hint" onclick="fillInput('kllmail','Write a post-purchase thank you email')">Post-purchase</button>
+          <button class="hint" onclick="fillInput('kllmail','Write an abandoned cart recovery email')">Abandoned cart</button>
+          <button class="hint" onclick="fillInput('kllmail','Write a sold out email to the waitlist')">Sold out</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="input-kllmail" placeholder="Tell KllMail what to write..." rows="1"></textarea>
+          <button class="send-btn" id="send-kllmail" onclick="sendMessage('kllmail')">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-kllchat" data-agent="kllchat">
+      <div class="panel-header">
+        <button class="back-btn" onclick="goHome()">‹</button>
+        <div class="ph-info">
+          <span class="ph-name">KllChat</span>
+          <span class="ph-sub">CUSTOMER SERVICE · DMS · FAQ · RESPONSES</span>
+        </div>
+        <div class="ph-dot"></div>
+      </div>
+      <div class="chat-body" id="chat-kllchat"></div>
+      <div class="chat-input-area">
+        <div class="hints-row">
+          <button class="hint" onclick="fillInput('kllchat','When is the next drop?')">Drop question</button>
+          <button class="hint" onclick="fillInput('kllchat','My order hasnt arrived, its been 2 weeks')">Late order</button>
+          <button class="hint" onclick="fillInput('kllchat','Do you do custom sizes?')">Custom sizes</button>
+          <button class="hint" onclick="fillInput('kllchat','Write a full FAQ for the 7THKLL website')">Full FAQ</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-input" id="input-kllchat" placeholder="Paste a customer message to respond to..." rows="1"></textarea>
+          <button class="send-btn" id="send-kllchat" onclick="sendMessage('kllchat')">Send</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="goHome()">
+      <span class="nav-icon">⌂</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" id="nav-kllcreate" onclick="openAgent('kllcreate')">
+      <span class="nav-icon">KC</span>
+      <span class="nav-label">Create</span>
+    </button>
+    <button class="nav-item" id="nav-kllwatch" onclick="openAgent('kllwatch')">
+      <span class="nav-icon">KW</span>
+      <span class="nav-label">Watch</span>
+    </button>
+    <button class="nav-item" id="nav-kllmail" onclick="openAgent('kllmail')">
+      <span class="nav-icon">KE</span>
+      <span class="nav-label">Mail</span>
+    </button>
+    <button class="nav-item" id="nav-kllchat" onclick="openAgent('kllchat')">
+      <span class="nav-icon">KX</span>
+      <span class="nav-label">Chat</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- Firebase + App Scripts -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCLYYqOYGUBmO7QhAy0zVA51ms2_05-mZg",
+  authDomain: "thkll-f8e8e.firebaseapp.com",
+  projectId: "thkll-f8e8e",
+  storageBucket: "thkll-f8e8e.firebasestorage.app",
+  messagingSenderId: "1047923352382",
+  appId: "1:1047923352382:web:b385140d0b9cca6556426f",
+  measurementId: "G-YH6HQFWJKX"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+window._db = db;
+window._fbReady = true;
+document.getElementById('syncBadge').style.display = 'flex';
+
+// Load existing messages for each agent on startup
+const agents = ['kllcreate','kllwatch','kllmail','kllchat'];
+agents.forEach(agent => {
+  const q = query(collection(db, `chats_${agent}`), orderBy('ts'));
+  onSnapshot(q, (snapshot) => {
+    const chatBody = document.getElementById(`chat-${agent}`);
+    // Only add messages not already in DOM (by tracking message IDs)
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'added') {
+        const data = change.doc.data();
+        const msgId = change.doc.id;
+        if (!document.getElementById(`msg-${msgId}`)) {
+          appendMessageToDOM(chatBody, data.text, data.role, agent, msgId);
+        }
+      }
+    });
+  });
+});
+
+// Save message to Firestore
+window.saveMessage = async (agent, text, role) => {
+  if (!window._fbReady) return;
+  try {
+    await addDoc(collection(db, `chats_${agent}`), {
+      text, role, ts: serverTimestamp()
+    });
+  } catch(e) { console.log('Sync error:', e); }
+};
+</script>
+
+<script>
+// ── PERSONAS ──────────────────────────────────────────────
+const PERSONAS = {
+  kllcreate: `You are KllCreate, the content generation AI for 7THKLL — a dark, elevated streetwear brand. Generate post content, captions, visual prompts, and scripts in the 7THKLL brand voice.
+
+BRAND VOICE: Cold. Minimal. Elevated. Cryptic but meaningful. No emojis unless intentional. Short sentences hit hard. Slogan: "not a brand. a becoming."
+
+BRAND: 7THKLL (@doneby7thkll). Dark gothic aesthetic. Limited drops. Community-first. Inspired by killtec, 8thwndr, NOCTA.
+
+Always provide:
+1. CAPTION — ready to post
+2. VISUAL PROMPT — for Kling AI, Leonardo, or Ideogram
+3. HASHTAGS — 10-15 tags
+4. POSTING NOTES — timing, platform tips`,
+
+  kllwatch: `You are KllWatch, the trend intelligence AI for 7THKLL — a dark, elevated streetwear brand building toward its first drop.
+
+Analyze the streetwear landscape, monitor competitors (killtec, 8thwndr, NOCTA, Fear of God), identify viral content patterns on TikTok and Instagram, and give 7THKLL actionable intelligence.
+
+BRAND: 7THKLL (@doneby7thkll) — dark gothic streetwear, limited drops, building audience before first drop. Be strategic, direct, specific.`,
+
+  kllmail: `You are KllMail, the email marketing AI for 7THKLL — a dark, elevated streetwear brand.
+
+Write all email communications in the 7THKLL brand voice. Short punchy sentences. Dark and cryptic. Subject lines that demand to be opened.
+
+BRAND: 7THKLL (@doneby7thkll). Slogan: "not a brand. a becoming." Limited drops. No restocks ever.
+
+Always include: Subject line, Preview text, Full email body.`,
+
+  kllchat: `You are KllChat, the customer service AI for 7THKLL — a dark, elevated streetwear brand.
+
+Write customer-facing responses in the 7THKLL brand voice. Direct. Minimal. Professional but human. No emojis unless customer used them.
+
+BRAND: 7THKLL (@doneby7thkll). Ships 3-5 business days after production via Apliiq. No restocks after drops sell out. Shopify store.`
+};
+
+// ── STATE ─────────────────────────────────────────────────
+let API_KEY = localStorage.getItem('7thkll_gemini_key') || '';
+let currentAgent = null;
+let isMobile = window.innerWidth < 768;
+
+// ── INIT ──────────────────────────────────────────────────
+window.onload = () => {
+  if (!API_KEY) {
+    document.getElementById('apiModal').classList.remove('hidden');
+  }
+  setupInputs();
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+};
+
+function checkMobile() {
+  isMobile = window.innerWidth < 768;
+}
+
+function setupInputs() {
+  document.querySelectorAll('.chat-input').forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+        e.preventDefault();
+        const agent = input.id.replace('input-','');
+        sendMessage(agent);
+      }
+    });
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    });
+  });
+}
+
+// ── SYSTEM INIT ───────────────────────────────────────────
+window.initSystem = () => {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  API_KEY = key;
+  localStorage.setItem('7thkll_gemini_key', key);
+  document.getElementById('apiModal').classList.add('hidden');
+};
+
+// ── NAVIGATION ────────────────────────────────────────────
+window.openAgent = (agent) => {
+  if (isMobile) {
+    document.getElementById('panel-home').classList.remove('active');
+  }
+  document.querySelectorAll('.panel:not(#panel-home)').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + agent).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + agent)?.classList.add('active');
+  currentAgent = agent;
+
+  // Show intro message if chat is empty (and firebase hasn't loaded messages yet)
+  setTimeout(() => {
+    const chatBody = document.getElementById('chat-' + agent);
+    if (chatBody && chatBody.children.length === 0) {
+      showIntro(agent);
+    }
+  }, 800);
+};
+
+window.goHome = () => {
+  if (isMobile) {
+    document.querySelectorAll('.panel:not(#panel-home)').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-home').classList.add('active');
+  }
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-home').classList.add('active');
+  currentAgent = null;
+};
+
+function showIntro(agent) {
+  const intros = {
+    kllcreate: '<strong>KllCreate online.</strong><br><br>I generate everything 7THKLL needs to post — captions, visual prompts, TikTok scripts, drop teasers. All in the brand voice.<br><br>What do you need created?',
+    kllwatch: '<strong>KllWatch online.</strong><br><br>I monitor the streetwear landscape and tell you what matters for 7THKLL. Trends, competitors, what\'s going viral.<br><br>What do you want to know?',
+    kllmail: '<strong>KllMail online.</strong><br><br>I write every email 7THKLL sends — waitlist confirmations, drop alerts, post-purchase sequences, abandoned cart recovery.<br><br>What email do you need?',
+    kllchat: '<strong>KllChat online.</strong><br><br>Paste a customer DM, comment, or question and I\'ll write the perfect response in the 7THKLL voice.<br><br>What do you need a response for?'
+  };
+  const chatBody = document.getElementById('chat-' + agent);
+  if (chatBody && chatBody.children.length === 0) {
+    appendMessageToDOM(chatBody, intros[agent], 'ai', agent, 'intro-' + agent);
+  }
+}
+
+// ── MESSAGING ─────────────────────────────────────────────
+window.fillInput = (agent, text) => {
+  const input = document.getElementById('input-' + agent);
+  input.value = text;
+  input.focus();
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+};
+
+window.sendMessage = async (agent) => {
+  if (!API_KEY) {
+    document.getElementById('apiModal').classList.remove('hidden');
+    return;
+  }
+  const input = document.getElementById('input-' + agent);
+  const text = input.value.trim();
+  if (!text) return;
+
+  const chatBody = document.getElementById('chat-' + agent);
+  const sendBtn = document.getElementById('send-' + agent);
+
+  // Add to UI immediately
+  appendMessageToDOM(chatBody, text, 'user', agent, 'local-' + Date.now());
+
+  // Save to Firebase
+  if (window.saveMessage) window.saveMessage(agent, text, 'user');
+
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // Typing indicator
+  const typing = createTyping(chatBody);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          system_instruction: { parts:[{ text: PERSONAS[agent] }] },
+          contents: [{ parts:[{ text }] }]
+        })
+      }
+    );
+    const data = await res.json();
+    typing.remove();
+
+    if (data.error) {
+      const errMsg = `Error: ${data.error.message}`;
+      appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
+    } else {
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.';
+      const formatted = formatReply(reply);
+      appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
+      if (window.saveMessage) window.saveMessage(agent, formatted, 'ai');
+    }
+  } catch(e) {
+    typing.remove();
+    appendMessageToDOM(chatBody, 'Connection error. Check your API key.', 'ai', agent, 'err-' + Date.now());
+  }
+
+  sendBtn.disabled = false;
+  input.focus();
+};
+
+// ── DOM HELPERS ───────────────────────────────────────────
+window.appendMessageToDOM = (chatBody, text, role, agent, id) => {
+  const avatars = { kllcreate:'KC', kllwatch:'KW', kllmail:'KE', kllchat:'KX' };
+  const msg = document.createElement('div');
+  msg.className = 'msg' + (role === 'user' ? ' user' : '');
+  msg.id = 'msg-' + id;
+
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = role === 'user' ? 'YOU' : (avatars[agent] || 'AI');
+
+  const bub = document.createElement('div');
+  bub.className = 'msg-bub';
+  bub.innerHTML = text;
+
+  msg.appendChild(av);
+  msg.appendChild(bub);
+  chatBody.appendChild(msg);
+  chatBody.scrollTop = chatBody.scrollHeight;
+};
+
+function createTyping(chatBody) {
+  const el = document.createElement('div');
+  el.className = 'msg typing-msg show';
+  el.innerHTML = `<div class="msg-av">···</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  chatBody.appendChild(el);
+  chatBody.scrollTop = chatBody.scrollHeight;
+  return el;
+}
+
+function formatReply(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<span class="tag">$1</span>')
+    .replace(/#{1,3} (.*?)(\n|$)/g,'<strong>$1</strong><br>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+</script>
+</body>
+</html>
