@@ -401,7 +401,7 @@ body::after {
   <div class="modal">
     <div class="modal-title">Initialize</div>
     <div class="modal-sub">Enter your Gemini API key to activate<br>all 7THKLL AI agents. Stored locally only.</div>
-    <input class="modal-input" type="password" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
+    <input class="modal-input" type="password" id="apiKeyInput" placeholder="gsk_..." autocomplete="off">
     <button class="modal-btn" onclick="initSystem()">Activate System</button>
     <div class="modal-note">
       Free key → <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a><br>
@@ -683,7 +683,7 @@ BRAND: 7THKLL (@doneby7thkll). Ships 3-5 business days after production via Apli
 };
 
 // ── STATE ─────────────────────────────────────────────────
-let API_KEY = localStorage.getItem('7thkll_gemini_key') || '';
+let API_KEY = localStorage.getItem('7thkll_groq_key') || '';
 let currentAgent = null;
 let isMobile = window.innerWidth < 768;
 
@@ -722,7 +722,7 @@ window.initSystem = () => {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key) return;
   API_KEY = key;
-  localStorage.setItem('7thkll_gemini_key', key);
+  localStorage.setItem('7thkll_groq_key', key);
   document.getElementById('apiModal').classList.add('hidden');
 };
 
@@ -805,13 +805,20 @@ window.sendMessage = async (agent) => {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+      `https://api.groq.com/openai/v1/chat/completions`,
       {
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
         body: JSON.stringify({
-          system_instruction: { parts:[{ text: PERSONAS[agent] }] },
-          contents: [{ parts:[{ text }] }]
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: PERSONAS[agent] },
+            { role: 'user', content: text }
+          ],
+          max_tokens: 1024
         })
       }
     );
@@ -823,9 +830,8 @@ window.sendMessage = async (agent) => {
       if (window.saveMessage) await window.saveMessage(agent, errMsg, 'ai');
       else appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
     } else {
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.';
+      const reply = data.choices?.[0]?.message?.content || 'No response.';
       const formatted = formatReply(reply);
-      // Save AI reply to Firebase — onSnapshot renders it (also fixes AI not saving)
       if (window.saveMessage) await window.saveMessage(agent, formatted, 'ai');
       else appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
     }
