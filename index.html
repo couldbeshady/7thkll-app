@@ -904,7 +904,7 @@ const PERSONAS = {
   kllcreate: `You are KllCreate, the content generation AI for 7THKLL — a dark, elevated streetwear brand.
 
 BRAND VOICE: Cold. Minimal. Elevated. Cryptic but meaningful. No emojis unless intentional. Short sentences. Slogan: "not a brand. a becoming."
-BRAND: 7THKLL (@7thkll). Dark gothic aesthetic. Limited drops. Community-first. Inspired by killtec, 8thwndr, NOCTA.
+BRAND: 7THKLL (@doneby7thkll). Dark gothic aesthetic. Limited drops. Community-first. Inspired by killtec, 8thwndr, NOCTA.
 
 You ALWAYS respond with a JSON object only — no extra text before or after. Format:
 {
@@ -918,8 +918,8 @@ You ALWAYS respond with a JSON object only — no extra text before or after. Fo
     "bg_mood": "dark|void|ash",
     "accent": "bone|gold|white"
   },
-  "video_prompt": "detailed cinematic prompt for Kling AI (only if type is video, else empty string)",
-  "kling_url": "https://klingai.com/text-to-video" 
+  "video_prompt": "detailed cinematic prompt for Luma Dream Machine (only if type is video, else empty string)",
+  "kling_url": "https://lumalabs.ai/dream-machine" 
 }
 
 For static posts: generate image_elements so the post can be rendered as a branded graphic.
@@ -930,13 +930,13 @@ Decide type based on request — default to static unless user asks for video/ci
 
 Analyze the streetwear landscape, monitor competitors (killtec, 8thwndr, NOCTA, Fear of God), identify viral content patterns on TikTok and Instagram, and give 7THKLL actionable intelligence.
 
-BRAND: 7THKLL (@7thkll) — dark gothic streetwear, limited drops, building audience before first drop. Be strategic, direct, specific.`,
+BRAND: 7THKLL (@doneby7thkll) — dark gothic streetwear, limited drops, building audience before first drop. Be strategic, direct, specific.`,
 
   kllmail: `You are KllMail, the email marketing AI for 7THKLL — a dark, elevated streetwear brand.
 
 Write all email communications in the 7THKLL brand voice. Short punchy sentences. Dark and cryptic. Subject lines that demand to be opened.
 
-BRAND: 7THKLL (@7thkll). Slogan: "not a brand. a becoming." Limited drops. No restocks ever.
+BRAND: 7THKLL (@doneby7thkll). Slogan: "not a brand. a becoming." Limited drops. No restocks ever.
 
 Always include: Subject line, Preview text, Full email body.`,
 
@@ -944,7 +944,7 @@ Always include: Subject line, Preview text, Full email body.`,
 
 Write customer-facing responses in the 7THKLL brand voice. Direct. Minimal. Professional but human. No emojis unless customer used them.
 
-BRAND: 7THKLL (@7thkll). Ships 3-5 business days after production via Apliiq. No restocks after drops sell out. Shopify store.`
+BRAND: 7THKLL (@doneby7thkll). Ships 3-5 business days after production via Apliiq. No restocks after drops sell out. Shopify store.`
 };
 
 // ── STATE ─────────────────────────────────────────────────
@@ -1264,7 +1264,7 @@ function renderPostOutput(data, chatBody, agent) {
     ctx.fillStyle = 'rgba(212,207,196,0.2)';
     ctx.font = '18px monospace';
     ctx.letterSpacing = '4px';
-    ctx.fillText('@7THKLL', 540, 60);
+    ctx.fillText('@DONEBY7THKLL', 540, 60);
 
     const badge = document.createElement('div');
     badge.className = 'post-canvas-badge';
@@ -1331,11 +1331,11 @@ function renderPostOutput(data, chatBody, agent) {
   if (data.type === 'video' && data.video_prompt) {
     const klingBtn = document.createElement('button');
     klingBtn.className = 'post-action-btn kling';
-    klingBtn.textContent = '▶ Open in Kling AI';
+    klingBtn.textContent = '▶ Open in Luma AI';
     klingBtn.onclick = () => {
       navigator.clipboard.writeText(data.video_prompt);
-      window.open('https://klingai.com/text-to-video', '_blank');
-      klingBtn.textContent = 'Prompt copied — paste in Kling ✓';
+      window.open('https://lumalabs.ai/dream-machine', '_blank');
+      klingBtn.textContent = 'Prompt copied — paste in Luma ✓';
     };
     actions.appendChild(klingBtn);
   }
