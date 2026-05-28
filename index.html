@@ -479,6 +479,65 @@ body::after {
 }
 .inspire-btn:active { border-color:var(--accent); }
 
+/* POST OUTPUT CARD */
+.post-output {
+  background: var(--ash); border: 1px solid var(--bone-faint);
+  overflow: hidden; margin-bottom: 4px;
+}
+.post-canvas-wrap {
+  position: relative; width: 100%;
+  aspect-ratio: 1/1; background: #080808;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; cursor: pointer;
+}
+.post-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+.post-canvas-badge {
+  position: absolute; top: 10px; left: 10px;
+  font-family: var(--mono); font-size: 0.4rem;
+  letter-spacing: 0.25em; color: var(--bone-dim);
+  padding: 3px 8px; border: 1px solid var(--bone-faint);
+  background: rgba(6,6,6,0.8);
+}
+.post-dl-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  font-family: var(--mono); font-size: 0.42rem;
+  letter-spacing: 0.2em; color: var(--black);
+  padding: 6px 14px; background: var(--bone);
+  border: none; cursor: pointer; -webkit-appearance: none;
+  transition: background 0.15s;
+}
+.post-dl-btn:active { background: var(--white); }
+.post-info { padding: 14px 16px; }
+.post-caption-text {
+  font-family: var(--mono); font-size: 0.55rem;
+  color: var(--bone); line-height: 1.8; letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.post-tags {
+  font-family: var(--mono); font-size: 0.44rem;
+  color: var(--bone-dim); letter-spacing: 0.08em;
+  margin-bottom: 12px; line-height: 1.9;
+}
+.post-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.post-action-btn {
+  padding: 6px 14px; background: transparent;
+  border: 1px solid var(--bone-faint);
+  font-family: var(--mono); font-size: 0.42rem;
+  color: var(--bone-dim); cursor: pointer;
+  letter-spacing: 0.15em; transition: all 0.15s;
+  -webkit-appearance: none; white-space: nowrap;
+}
+.post-action-btn:active { border-color: var(--bone-dim); color: var(--bone); }
+.post-action-btn.kling {
+  border-color: var(--accent-dim); color: var(--accent);
+}
+.post-notes {
+  font-family: var(--mono); font-size: 0.44rem;
+  color: var(--bone-dim); letter-spacing: 0.08em;
+  padding: 10px 16px; border-top: 1px solid var(--bone-faint);
+  line-height: 1.8;
+}
+
 /* DESKTOP LAYOUT */
 @media (min-width: 768px) {
   .app { flex-direction:column; }
@@ -842,29 +901,42 @@ window.saveMessage = async (agent, text, role) => {
 <script>
 // ── PERSONAS ──────────────────────────────────────────────
 const PERSONAS = {
-  kllcreate: `You are KllCreate, the content generation AI for 7THKLL — a dark, elevated streetwear brand. Generate post content, captions, visual prompts, and scripts in the 7THKLL brand voice.
+  kllcreate: `You are KllCreate, the content generation AI for 7THKLL — a dark, elevated streetwear brand.
 
-BRAND VOICE: Cold. Minimal. Elevated. Cryptic but meaningful. No emojis unless intentional. Short sentences hit hard. Slogan: "not a brand. a becoming."
+BRAND VOICE: Cold. Minimal. Elevated. Cryptic but meaningful. No emojis unless intentional. Short sentences. Slogan: "not a brand. a becoming."
+BRAND: 7THKLL (@7thkll). Dark gothic aesthetic. Limited drops. Community-first. Inspired by killtec, 8thwndr, NOCTA.
 
-BRAND: 7THKLL (@doneby7thkll). Dark gothic aesthetic. Limited drops. Community-first. Inspired by killtec, 8thwndr, NOCTA.
+You ALWAYS respond with a JSON object only — no extra text before or after. Format:
+{
+  "type": "static" or "video",
+  "caption": "ready to post caption",
+  "hashtags": ["tag1","tag2",...],
+  "posting_notes": "brief timing/platform tip",
+  "image_elements": {
+    "headline": "1-3 word bold text to overlay (or empty string)",
+    "subtext": "small subtext line (or empty string)",
+    "bg_mood": "dark|void|ash",
+    "accent": "bone|gold|white"
+  },
+  "video_prompt": "detailed cinematic prompt for Kling AI (only if type is video, else empty string)",
+  "kling_url": "https://klingai.com/text-to-video" 
+}
 
-Always provide:
-1. CAPTION — ready to post
-2. VISUAL PROMPT — for Kling AI, Leonardo, or Ideogram
-3. HASHTAGS — 10-15 tags
-4. POSTING NOTES — timing, platform tips`,
+For static posts: generate image_elements so the post can be rendered as a branded graphic.
+For video posts: generate a detailed video_prompt for Kling AI and set kling_url.
+Decide type based on request — default to static unless user asks for video/cinematic/motion content.`,
 
   kllwatch: `You are KllWatch, the trend intelligence AI for 7THKLL — a dark, elevated streetwear brand building toward its first drop.
 
 Analyze the streetwear landscape, monitor competitors (killtec, 8thwndr, NOCTA, Fear of God), identify viral content patterns on TikTok and Instagram, and give 7THKLL actionable intelligence.
 
-BRAND: 7THKLL (@doneby7thkll) — dark gothic streetwear, limited drops, building audience before first drop. Be strategic, direct, specific.`,
+BRAND: 7THKLL (@7thkll) — dark gothic streetwear, limited drops, building audience before first drop. Be strategic, direct, specific.`,
 
   kllmail: `You are KllMail, the email marketing AI for 7THKLL — a dark, elevated streetwear brand.
 
 Write all email communications in the 7THKLL brand voice. Short punchy sentences. Dark and cryptic. Subject lines that demand to be opened.
 
-BRAND: 7THKLL (@doneby7thkll). Slogan: "not a brand. a becoming." Limited drops. No restocks ever.
+BRAND: 7THKLL (@7thkll). Slogan: "not a brand. a becoming." Limited drops. No restocks ever.
 
 Always include: Subject line, Preview text, Full email body.`,
 
@@ -872,7 +944,7 @@ Always include: Subject line, Preview text, Full email body.`,
 
 Write customer-facing responses in the 7THKLL brand voice. Direct. Minimal. Professional but human. No emojis unless customer used them.
 
-BRAND: 7THKLL (@doneby7thkll). Ships 3-5 business days after production via Apliiq. No restocks after drops sell out. Shopify store.`
+BRAND: 7THKLL (@7thkll). Ships 3-5 business days after production via Apliiq. No restocks after drops sell out. Shopify store.`
 };
 
 // ── STATE ─────────────────────────────────────────────────
@@ -1044,9 +1116,27 @@ window.sendMessage = async (agent) => {
       else appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
     } else {
       const reply = data.choices?.[0]?.message?.content || 'No response.';
-      const formatted = formatReply(reply);
-      if (window.saveMessage) await window.saveMessage(agent, formatted, 'ai');
-      else appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
+
+      // KllCreate — parse JSON and render post card
+      if (agent === 'kllcreate') {
+        try {
+          const clean = reply.replace(/```json|```/g, '').trim();
+          const parsed = JSON.parse(clean);
+          renderPostOutput(parsed, chatBody, agent);
+          // Save a text summary to Firebase for sync
+          const summary = `[POST GENERATED]\nCAPTION: ${parsed.caption}\nTYPE: ${parsed.type}`;
+          if (window.saveMessage) await window.saveMessage(agent, summary, 'ai');
+        } catch(e) {
+          // Fallback if JSON parse fails
+          const formatted = formatReply(reply);
+          if (window.saveMessage) await window.saveMessage(agent, formatted, 'ai');
+          else appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
+        }
+      } else {
+        const formatted = formatReply(reply);
+        if (window.saveMessage) await window.saveMessage(agent, formatted, 'ai');
+        else appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
+      }
     }
   } catch(e) {
     typing.remove();
@@ -1087,6 +1177,183 @@ function createTyping(chatBody) {
   chatBody.appendChild(el);
   chatBody.scrollTop = chatBody.scrollHeight;
   return el;
+}
+
+// ── POST RENDERER ────────────────────────────────────────
+function renderPostOutput(data, chatBody, agent) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = 'KC';
+
+  const card = document.createElement('div');
+  card.className = 'post-output';
+  card.style.maxWidth = '85%';
+
+  // Canvas for static image
+  if (data.type === 'static' || !data.type) {
+    const canvasWrap = document.createElement('div');
+    canvasWrap.className = 'post-canvas-wrap';
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    const bgColors = { dark: '#080808', void: '#060606', ash: '#111111' };
+    ctx.fillStyle = bgColors[data.image_elements?.bg_mood] || '#080808';
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Subtle grid lines
+    ctx.strokeStyle = 'rgba(212,207,196,0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 1080; i += 120) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 1080); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1080, i); ctx.stroke();
+    }
+
+    // Corner marks
+    ctx.strokeStyle = 'rgba(212,207,196,0.15)';
+    ctx.lineWidth = 1;
+    const cm = 40;
+    [[0,0],[1080,0],[0,1080],[1080,1080]].forEach(([x,y]) => {
+      const dx = x === 0 ? 1 : -1;
+      const dy = y === 0 ? 1 : -1;
+      ctx.beginPath(); ctx.moveTo(x + dx*cm, y); ctx.lineTo(x, y); ctx.lineTo(x, y + dy*cm); ctx.stroke();
+    });
+
+    // Center cross
+    ctx.strokeStyle = 'rgba(212,207,196,0.06)';
+    ctx.beginPath(); ctx.moveTo(540, 0); ctx.lineTo(540, 1080); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 540); ctx.lineTo(1080, 540); ctx.stroke();
+
+    // Accent color
+    const accentColors = { bone: '#d4cfc4', gold: '#c8a96e', white: '#f0ece4' };
+    const accent = accentColors[data.image_elements?.accent] || '#d4cfc4';
+
+    // Headline text
+    const headline = data.image_elements?.headline || '7THKLL';
+    if (headline) {
+      ctx.fillStyle = accent;
+      ctx.textAlign = 'center';
+      const fontSize = headline.length > 8 ? 100 : 130;
+      ctx.font = `bold ${fontSize}px serif`;
+      ctx.letterSpacing = '12px';
+      ctx.fillText(headline.toUpperCase(), 540, 520);
+    }
+
+    // Subtext
+    const subtext = data.image_elements?.subtext || 'not a brand. a becoming.';
+    if (subtext) {
+      ctx.fillStyle = 'rgba(212,207,196,0.45)';
+      ctx.font = '28px serif';
+      ctx.letterSpacing = '6px';
+      ctx.fillText(subtext, 540, 600);
+    }
+
+    // 7THKLL watermark bottom
+    ctx.fillStyle = 'rgba(212,207,196,0.15)';
+    ctx.font = '22px serif';
+    ctx.letterSpacing = '8px';
+    ctx.fillText('7THKLL', 540, 1020);
+
+    // Top label
+    ctx.fillStyle = 'rgba(212,207,196,0.2)';
+    ctx.font = '18px monospace';
+    ctx.letterSpacing = '4px';
+    ctx.fillText('@7THKLL', 540, 60);
+
+    const badge = document.createElement('div');
+    badge.className = 'post-canvas-badge';
+    badge.textContent = 'TAP TO DOWNLOAD';
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'post-dl-btn';
+    dlBtn.textContent = '↓ SAVE';
+    dlBtn.onclick = () => {
+      const a = document.createElement('a');
+      a.download = '7thkll-post.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+
+    canvasWrap.onclick = () => dlBtn.click();
+    canvasWrap.appendChild(canvas);
+    canvasWrap.appendChild(badge);
+    canvasWrap.appendChild(dlBtn);
+    card.appendChild(canvasWrap);
+  }
+
+  // Post info
+  const info = document.createElement('div');
+  info.className = 'post-info';
+
+  const captionEl = document.createElement('div');
+  captionEl.className = 'post-caption-text';
+  captionEl.textContent = data.caption || '';
+  info.appendChild(captionEl);
+
+  if (data.hashtags && data.hashtags.length) {
+    const tags = document.createElement('div');
+    tags.className = 'post-tags';
+    tags.textContent = data.hashtags.map(t => '#' + t.replace('#','')).join(' ');
+    info.appendChild(tags);
+  }
+
+  // Action buttons
+  const actions = document.createElement('div');
+  actions.className = 'post-actions';
+
+  const copyCapBtn = document.createElement('button');
+  copyCapBtn.className = 'post-action-btn';
+  copyCapBtn.textContent = 'Copy Caption';
+  copyCapBtn.onclick = () => {
+    navigator.clipboard.writeText(data.caption || '');
+    copyCapBtn.textContent = 'Copied ✓';
+    setTimeout(() => copyCapBtn.textContent = 'Copy Caption', 2000);
+  };
+  actions.appendChild(copyCapBtn);
+
+  const copyTagBtn = document.createElement('button');
+  copyTagBtn.className = 'post-action-btn';
+  copyTagBtn.textContent = 'Copy Tags';
+  copyTagBtn.onclick = () => {
+    navigator.clipboard.writeText((data.hashtags || []).map(t => '#' + t.replace('#','')).join(' '));
+    copyTagBtn.textContent = 'Copied ✓';
+    setTimeout(() => copyTagBtn.textContent = 'Copy Tags', 2000);
+  };
+  actions.appendChild(copyTagBtn);
+
+  // Kling button for video
+  if (data.type === 'video' && data.video_prompt) {
+    const klingBtn = document.createElement('button');
+    klingBtn.className = 'post-action-btn kling';
+    klingBtn.textContent = '▶ Open in Kling AI';
+    klingBtn.onclick = () => {
+      navigator.clipboard.writeText(data.video_prompt);
+      window.open('https://klingai.com/text-to-video', '_blank');
+      klingBtn.textContent = 'Prompt copied — paste in Kling ✓';
+    };
+    actions.appendChild(klingBtn);
+  }
+
+  info.appendChild(actions);
+  card.appendChild(info);
+
+  if (data.posting_notes) {
+    const notes = document.createElement('div');
+    notes.className = 'post-notes';
+    notes.textContent = '📌 ' + data.posting_notes;
+    card.appendChild(notes);
+  }
+
+  wrap.appendChild(av);
+  wrap.appendChild(card);
+  chatBody.appendChild(wrap);
+  chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 function formatReply(text) {
