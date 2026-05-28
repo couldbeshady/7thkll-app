@@ -371,6 +371,114 @@ body::after {
   margin-left:auto; flex-shrink:0;
 }
 
+/* INSPIRATION LIBRARY */
+.inspire-modal-overlay {
+  position:fixed; inset:0; background:rgba(6,6,6,0.97);
+  z-index:7000; display:flex; align-items:flex-end;
+  padding:0;
+}
+.inspire-modal-overlay.hidden { display:none; }
+.inspire-modal {
+  background:var(--void); border-top:1px solid var(--bone-faint);
+  width:100%; max-height:85vh; display:flex; flex-direction:column;
+  animation:slideUp 0.3s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.inspire-header {
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--bone-faint);
+  display:flex; align-items:center; gap:12px; flex-shrink:0;
+}
+.inspire-title {
+  font-family:var(--display); font-size:0.85rem;
+  letter-spacing:0.2em; color:var(--bone); flex:1;
+}
+.inspire-close {
+  background:none; border:none; font-family:var(--mono);
+  font-size:0.7rem; color:var(--bone-dim); cursor:pointer;
+  padding:4px 8px; -webkit-appearance:none;
+}
+.inspire-close:active { color:var(--bone); }
+.inspire-count {
+  font-family:var(--mono); font-size:0.45rem;
+  letter-spacing:0.2em; color:var(--accent);
+  padding:3px 10px; border:1px solid var(--accent-dim);
+}
+.inspire-add {
+  padding:16px 20px; border-bottom:1px solid var(--bone-faint);
+  flex-shrink:0;
+}
+.inspire-add-label {
+  font-family:var(--mono); font-size:0.45rem;
+  letter-spacing:0.3em; color:var(--bone-dim);
+  text-transform:uppercase; margin-bottom:10px; display:block;
+}
+.inspire-textarea {
+  width:100%; background:var(--ash); border:1px solid var(--bone-faint);
+  padding:12px 14px; font-family:var(--mono); font-size:0.55rem;
+  color:var(--bone); letter-spacing:0.05em; outline:none;
+  resize:none; height:80px; -webkit-appearance:none;
+  transition:border-color 0.2s; line-height:1.7;
+}
+.inspire-textarea:focus { border-color:var(--bone-dim); }
+.inspire-textarea::placeholder { color:var(--bone-faint); }
+.inspire-source {
+  width:100%; background:var(--ash); border:1px solid var(--bone-faint);
+  border-top:none; padding:10px 14px; font-family:var(--mono);
+  font-size:0.5rem; color:var(--bone); letter-spacing:0.05em;
+  outline:none; -webkit-appearance:none; transition:border-color 0.2s;
+  margin-bottom:10px;
+}
+.inspire-source:focus { border-color:var(--bone-dim); }
+.inspire-source::placeholder { color:var(--bone-faint); }
+.inspire-save-btn {
+  width:100%; padding:12px; background:var(--bone); border:none;
+  font-family:var(--mono); font-size:0.55rem; letter-spacing:0.3em;
+  color:var(--black); cursor:pointer; text-transform:uppercase;
+  -webkit-appearance:none; transition:background 0.15s;
+}
+.inspire-save-btn:active { background:var(--white); }
+.inspire-list {
+  flex:1; overflow-y:auto; padding:12px;
+  display:flex; flex-direction:column; gap:8px;
+  -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+.inspire-list::-webkit-scrollbar { display:none; }
+.inspire-item {
+  background:var(--ash); border:1px solid var(--bone-faint);
+  padding:14px; position:relative;
+}
+.inspire-item-source {
+  font-family:var(--mono); font-size:0.42rem;
+  letter-spacing:0.25em; color:var(--accent);
+  text-transform:uppercase; margin-bottom:8px; display:block;
+}
+.inspire-item-text {
+  font-family:var(--mono); font-size:0.52rem;
+  color:var(--bone-dim); line-height:1.7; letter-spacing:0.04em;
+}
+.inspire-item-del {
+  position:absolute; top:10px; right:10px;
+  background:none; border:none; font-family:var(--mono);
+  font-size:0.55rem; color:var(--bone-faint); cursor:pointer;
+  padding:4px; -webkit-appearance:none;
+}
+.inspire-item-del:active { color:var(--bone); }
+.inspire-empty {
+  font-family:var(--mono); font-size:0.5rem;
+  color:var(--bone-faint); letter-spacing:0.2em;
+  text-align:center; padding:40px 20px;
+}
+.inspire-btn {
+  padding:5px 12px; background:transparent;
+  border:1px solid var(--accent-dim);
+  font-family:var(--mono); font-size:0.42rem;
+  color:var(--accent); white-space:nowrap;
+  cursor:pointer; letter-spacing:0.15em; transition:all 0.2s;
+  -webkit-appearance:none; flex-shrink:0;
+}
+.inspire-btn:active { border-color:var(--accent); }
+
 /* DESKTOP LAYOUT */
 @media (min-width: 768px) {
   .app { flex-direction:column; }
@@ -479,6 +587,7 @@ body::after {
       <div class="chat-body" id="chat-kllcreate"></div>
       <div class="chat-input-area">
         <div class="hints-row">
+          <button class="inspire-btn" onclick="openInspire()">+ Inspiration Library</button>
           <button class="hint" onclick="fillInput('kllcreate','Generate a full post package for today')">Today's post</button>
           <button class="hint" onclick="fillInput('kllcreate','Write a drop teaser caption')">Drop teaser</button>
           <button class="hint" onclick="fillInput('kllcreate','Create a cinematic video prompt for Kling AI')">Video prompt</button>
@@ -593,10 +702,30 @@ body::after {
 
 </div>
 
+<!-- INSPIRATION LIBRARY MODAL -->
+<div class="inspire-modal-overlay hidden" id="inspireModal">
+  <div class="inspire-modal">
+    <div class="inspire-header">
+      <span class="inspire-title">Inspiration Library</span>
+      <span class="inspire-count" id="inspireCount">0 posts</span>
+      <button class="inspire-close" onclick="closeInspire()">✕</button>
+    </div>
+    <div class="inspire-add">
+      <span class="inspire-add-label">Add a post to learn from</span>
+      <textarea class="inspire-textarea" id="inspireText" placeholder="Paste a caption, post text, or content style you want KllCreate to learn from..."></textarea>
+      <input class="inspire-source" id="inspireSource" type="text" placeholder="Source (e.g. killtec, 8thwndr, your own idea...)">
+      <button class="inspire-save-btn" onclick="saveInspiration()">Save to Library</button>
+    </div>
+    <div class="inspire-list" id="inspireList">
+      <div class="inspire-empty" id="inspireEmpty">No posts yet. Add some above to teach KllCreate your style.</div>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase + App Scripts -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp }
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -633,6 +762,70 @@ agents.forEach(agent => {
     });
   });
 });
+
+// ── INSPIRATION LIBRARY ──────────────────────────────────
+// Load inspirations on startup
+async function loadInspirations() {
+  try {
+    const snap = await getDocs(collection(db, 'inspirations'));
+    window._inspirations = [];
+    snap.forEach(d => {
+      window._inspirations.push({ id: d.id, ...d.data() });
+    });
+    renderInspirations();
+  } catch(e) { console.log('inspire load error', e); }
+}
+loadInspirations();
+
+window.saveInspiration = async () => {
+  const text = document.getElementById('inspireText').value.trim();
+  const source = document.getElementById('inspireSource').value.trim() || 'unknown';
+  if (!text) return;
+  try {
+    const ref = await addDoc(collection(db, 'inspirations'), {
+      text, source, ts: serverTimestamp()
+    });
+    window._inspirations = window._inspirations || [];
+    window._inspirations.push({ id: ref.id, text, source });
+    document.getElementById('inspireText').value = '';
+    document.getElementById('inspireSource').value = '';
+    renderInspirations();
+  } catch(e) { console.log('inspire save error', e); }
+};
+
+window.deleteInspiration = async (id) => {
+  try {
+    await deleteDoc(doc(db, 'inspirations', id));
+    window._inspirations = (window._inspirations || []).filter(i => i.id !== id);
+    renderInspirations();
+  } catch(e) { console.log('inspire delete error', e); }
+};
+
+function renderInspirations() {
+  const list = document.getElementById('inspireList');
+  const empty = document.getElementById('inspireEmpty');
+  const count = document.getElementById('inspireCount');
+  const items = window._inspirations || [];
+  count.textContent = items.length + ' post' + (items.length !== 1 ? 's' : '');
+  if (items.length === 0) {
+    empty.style.display = 'block';
+    list.querySelectorAll('.inspire-item').forEach(el => el.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  list.querySelectorAll('.inspire-item').forEach(el => el.remove());
+  [...items].reverse().forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'inspire-item';
+    el.innerHTML = `
+      <span class="inspire-item-source">${item.source}</span>
+      <div class="inspire-item-text">${item.text.replace(/</g,'&lt;')}</div>
+      <button class="inspire-item-del" onclick="deleteInspiration('${item.id}')">✕</button>
+    `;
+    list.appendChild(el);
+  });
+}
+window._renderInspirations = renderInspirations;
 
 // Save message to Firestore — this is the ONLY way messages get added to DOM
 window.saveMessage = async (agent, text, role) => {
@@ -726,6 +919,14 @@ window.initSystem = () => {
   document.getElementById('apiModal').classList.add('hidden');
 };
 
+window.openInspire = () => {
+  document.getElementById('inspireModal').classList.remove('hidden');
+  if (window._renderInspirations) window._renderInspirations();
+};
+window.closeInspire = () => {
+  document.getElementById('inspireModal').classList.add('hidden');
+};
+
 // ── NAVIGATION ────────────────────────────────────────────
 window.openAgent = (agent) => {
   if (isMobile) {
@@ -804,6 +1005,18 @@ window.sendMessage = async (agent) => {
   const typing = createTyping(chatBody);
 
   try {
+    // Build system prompt — inject inspirations for KllCreate
+    let systemPrompt = PERSONAS[agent];
+    if (agent === 'kllcreate') {
+      const inspirations = window._inspirations || [];
+      if (inspirations.length > 0) {
+        const examples = inspirations.slice(-10).map(i =>
+          `SOURCE: ${i.source}\nPOST: ${i.text}`
+        ).join('\n\n---\n\n');
+        systemPrompt += `\n\nINSPIRATION LIBRARY — Study these posts and use their style, tone, and energy as reference when generating content. Do not copy them directly — take inspiration from the vibe:\n\n${examples}`;
+      }
+    }
+
     const res = await fetch(
       `https://api.groq.com/openai/v1/chat/completions`,
       {
@@ -815,7 +1028,7 @@ window.sendMessage = async (agent) => {
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
-            { role: 'system', content: PERSONAS[agent] },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: text }
           ],
           max_tokens: 1024
