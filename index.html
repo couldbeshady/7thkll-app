@@ -634,14 +634,15 @@ agents.forEach(agent => {
   });
 });
 
-// Save message to Firestore
+// Save message to Firestore — this is the ONLY way messages get added to DOM
 window.saveMessage = async (agent, text, role) => {
-  if (!window._fbReady) return;
+  if (!window._fbReady) return null;
   try {
-    await addDoc(collection(db, `chats_${agent}`), {
+    const ref = await addDoc(collection(db, `chats_${agent}`), {
       text, role, ts: serverTimestamp()
     });
-  } catch(e) { console.log('Sync error:', e); }
+    return ref.id;
+  } catch(e) { console.log('Sync error:', e); return null; }
 };
 </script>
 
@@ -789,22 +790,22 @@ window.sendMessage = async (agent) => {
   const chatBody = document.getElementById('chat-' + agent);
   const sendBtn = document.getElementById('send-' + agent);
 
-  // Add to UI immediately
-  appendMessageToDOM(chatBody, text, 'user', agent, 'local-' + Date.now());
-
-  // Save to Firebase
-  if (window.saveMessage) window.saveMessage(agent, text, 'user');
-
   input.value = '';
   input.style.height = 'auto';
   sendBtn.disabled = true;
 
-  // Typing indicator
+  // Save to Firebase only — onSnapshot renders it (fixes duplicate bug)
+  if (window.saveMessage) {
+    await window.saveMessage(agent, text, 'user');
+  } else {
+    appendMessageToDOM(chatBody, text, 'user', agent, 'local-' + Date.now());
+  }
+
   const typing = createTyping(chatBody);
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
       {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -819,16 +820,20 @@ window.sendMessage = async (agent) => {
 
     if (data.error) {
       const errMsg = `Error: ${data.error.message}`;
-      appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
+      if (window.saveMessage) await window.saveMessage(agent, errMsg, 'ai');
+      else appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
     } else {
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.';
       const formatted = formatReply(reply);
-      appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
-      if (window.saveMessage) window.saveMessage(agent, formatted, 'ai');
+      // Save AI reply to Firebase — onSnapshot renders it (also fixes AI not saving)
+      if (window.saveMessage) await window.saveMessage(agent, formatted, 'ai');
+      else appendMessageToDOM(chatBody, formatted, 'ai', agent, 'ai-' + Date.now());
     }
   } catch(e) {
     typing.remove();
-    appendMessageToDOM(chatBody, 'Connection error. Check your API key.', 'ai', agent, 'err-' + Date.now());
+    const errMsg = 'Connection error. Check your API key.';
+    if (window.saveMessage) await window.saveMessage(agent, errMsg, 'ai');
+    else appendMessageToDOM(chatBody, errMsg, 'ai', agent, 'err-' + Date.now());
   }
 
   sendBtn.disabled = false;
